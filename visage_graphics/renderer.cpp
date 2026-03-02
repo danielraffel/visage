@@ -61,7 +61,7 @@ namespace visage {
   static constexpr uint32_t resetFlags() {
 #if VISAGE_WINDOWS
     return BGFX_RESET_FLIP_AFTER_RENDER;
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
     return BGFX_RESET_FLIP_AFTER_RENDER | BGFX_RESET_VSYNC;
 #elif VISAGE_LINUX
     return BGFX_RESET_VSYNC;
@@ -130,7 +130,7 @@ namespace visage {
         bgfx_init.type = bgfx::RendererType::Direct3D12;
     }
 #endif
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
     bgfx_init.type = bgfx::RendererType::Metal;
     bgfx_init.resolution.width = 1;
     bgfx_init.resolution.height = 1;
@@ -157,7 +157,7 @@ namespace visage {
   }
 
   void Renderer::resetResolution(int width, int height) {
-#if VISAGE_MAC
+#if VISAGE_MAC || VISAGE_IOS
     bgfx::reset(width, height, resetFlags());
 #endif
   }

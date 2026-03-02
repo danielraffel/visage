@@ -29,7 +29,7 @@
 #if VISAGE_WINDOWS
 #include <ShlObj.h>
 #include <windows.h>
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
 #else
@@ -123,7 +123,7 @@ namespace visage {
       path = buffer;
     }
     return path;
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
     static constexpr int kMaxPathLength = 1 << 14;
     char path[kMaxPathLength];
     uint32_t size = kMaxPathLength - 1;
@@ -153,7 +153,7 @@ namespace visage {
       path = buffer;
     }
     return path;
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
     return "~/Library";
 #elif VISAGE_LINUX
     return xdgFolder("XDG_DATA_HOME", "~/.config");
@@ -171,7 +171,7 @@ namespace visage {
       path = buffer;
     }
     return path;
-#elif VISAGE_MAC
+#elif VISAGE_MAC || VISAGE_IOS
     return "~/Documents";
 #elif VISAGE_LINUX
     return xdgFolder("XDG_DOCUMENTS_DIR", "~/Documents");
