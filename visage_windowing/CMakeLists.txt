@@ -5,6 +5,9 @@ elseif (WIN32)
   file(GLOB PLATFORM_SOURCE_FILES win32/*.cpp)
   file(GLOB PLATFORM_HEADER_FILES win32/*.h)
   set(WIN_LIBS dxgi Shell32)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  file(GLOB PLATFORM_SOURCE_FILES ios/*.mm)
+  file(GLOB PLATFORM_HEADER_FILES ios/*.h)
 elseif (APPLE)
   file(GLOB PLATFORM_SOURCE_FILES macos/*.mm)
   file(GLOB PLATFORM_HEADER_FILES macos/*.h)
@@ -36,4 +39,9 @@ set_target_properties(VisageWindowing PROPERTIES FOLDER "visage")
 if (APPLE)
   target_compile_options(VisageWindowing PRIVATE -fobjc-arc)
 endif ()
+
+visage_add_test_target(
+  TARGET VisageWindowingTests
+  TEST_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
 
