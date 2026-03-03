@@ -93,6 +93,23 @@ TEST_CASE("Clipboard round-trip", "[windowing]") {
   REQUIRE(result == test_text);
 }
 
+TEST_CASE("Window handleMouseDown accepts pointer_id parameter", "[windowing]") {
+  using namespace visage::dimension;
+  auto window = createWindow(100_px, 100_px);
+  REQUIRE(window != nullptr);
+
+  SECTION("Default pointer_id 0 does not crash without event handler") {
+    window->handleMouseDown(kMouseButtonLeft, 10, 10, kMouseButtonLeft, 0);
+    window->handleMouseUp(kMouseButtonLeft, 10, 10, 0, 0);
+  }
+
+  SECTION("Non-zero pointer_id does not crash without event handler") {
+    window->handleMouseDown(kMouseButtonLeft, 10, 10, kMouseButtonLeft, 0, 1);
+    window->handleMouseMove(15, 15, kMouseButtonLeft, 0, 1);
+    window->handleMouseUp(kMouseButtonLeft, 15, 15, 0, 0, 1);
+  }
+}
+
 #if VISAGE_IOS
 TEST_CASE("iOS window max dimensions are screen-sized", "[windowing][ios]") {
   using namespace visage::dimension;
