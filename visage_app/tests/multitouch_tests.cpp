@@ -291,3 +291,70 @@ TEST_CASE("Multi-pointer: three simultaneous touches", "[multitouch]") {
   REQUIRE(b_up == 1);
   REQUIRE(c_up == 1);
 }
+
+TEST_CASE("Multi-pointer: move resets repeat click count for non-primary pointer", "[multitouch]") {
+  ApplicationEditor editor;
+
+  Frame target;
+  target.setBounds(0, 0, 100, 100);
+
+  int last_repeat_count = 0;
+
+  target.onMouseDown() += [&](const MouseEvent& e) {
+    last_repeat_count = e.repeatClickCount();
+  };
+
+  editor.addChild(&target);
+  editor.setWindowless(100, 100);
+
+  Window* window = editor.window();
+
+  // Two quick taps at the same position with pointer 1 → double click
+  window->handleMouseDown(kMouseButtonLeft, 50, 50, kMouseButtonLeft, 0, 1);
+  window->handleMouseUp(kMouseButtonLeft, 50, 50, 0, 0, 1);
+  window->handleMouseDown(kMouseButtonLeft, 50, 50, kMouseButtonLeft, 0, 1);
+  REQUIRE(last_repeat_count == 2);
+  window->handleMouseUp(kMouseButtonLeft, 50, 50, 0, 0, 1);
+
+  // Move pointer 1 to a different position → should reset click count
+  window->handleMouseMove(80, 80, 0, 0, 1);
+
+  // Next tap at new position should be click count 1, not 3
+  window->handleMouseDown(kMouseButtonLeft, 80, 80, kMouseButtonLeft, 0, 1);
+  REQUIRE(last_repeat_count == 1);
+  window->handleMouseUp(kMouseButtonLeft, 80, 80, 0, 0, 1);
+}
+
+TEST_CASE("Multi-pointer: focus lost uses per-pointer positions for mouseUp", "[multitouch]") {
+  ApplicationEditor editor;
+
+  Frame frame_a;
+  Frame frame_b;
+
+  frame_a.setBounds(0, 0, 50, 100);
+  frame_b.setBounds(50, 0, 50, 100);
+
+  float a_up_x = -1, b_up_x = -1;
+
+  frame_a.onMouseUp() += [&](const MouseEvent& e) { a_up_x = e.position.x; };
+  frame_b.onMouseUp() += [&](const MouseEvent& e) { b_up_x = e.position.x; };
+
+  editor.addChild(&frame_a);
+  editor.addChild(&frame_b);
+  editor.setWindowless(100, 100);
+
+  Window* window = editor.window();
+
+  // Pointer 0 at x=25, pointer 1 at x=75
+  window->handleMouseDown(kMouseButtonLeft, 25, 50, kMouseButtonLeft, 0, 0);
+  window->handleMouseDown(kMouseButtonLeft, 75, 50, kMouseButtonLeft, 0, 1);
+
+  // Move each pointer to distinct positions
+  window->handleMouseMove(30, 50, kMouseButtonLeft, 0, 0);
+  window->handleMouseMove(80, 50, kMouseButtonLeft, 0, 1);
+
+  window->handleFocusLost();
+
+  // Each frame should get mouseUp at its pointer's last position, not a shared one
+  REQUIRE(a_up_x != b_up_x);
+}

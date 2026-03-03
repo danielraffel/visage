@@ -122,7 +122,16 @@ namespace visage {
 }
 
 - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  for (UITouch* touch in touches) {
+  NSArray<UITouch*>* sorted = [[touches allObjects]
+      sortedArrayUsingComparator:^NSComparisonResult(UITouch* a, UITouch* b) {
+        CGPoint pa = [a locationInView:self];
+        CGPoint pb = [b locationInView:self];
+        if (pa.x != pb.x) return pa.x < pb.x ? NSOrderedAscending : NSOrderedDescending;
+        if (pa.y != pb.y) return pa.y < pb.y ? NSOrderedAscending : NSOrderedDescending;
+        return NSOrderedSame;
+      }];
+
+  for (UITouch* touch in sorted) {
     int pid = [self assignPointerId:touch];
     visage::Point point = [self touchPosition:touch];
     self.visage_window->handleMouseDown(visage::kMouseButtonLeft, point.x, point.y,
