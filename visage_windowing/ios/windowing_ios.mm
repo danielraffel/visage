@@ -87,18 +87,22 @@ namespace visage {
   self.enableSetNeedsDisplay = NO;
   self.framebufferOnly = YES;
   self.preferredFramesPerSecond = 60;
-  self.multipleTouchEnabled = NO;
-  self.active_touch = nil;
+  self.multipleTouchEnabled = YES;
+  self.active_touches = [NSMapTable weakToStrongObjectsMapTable];
+  self.next_pointer_id = 0;
   return self;
 }
 
 // ---------------------------------------------------------------------------
-// Touch → mouse event mapping
+// Touch → mouse event mapping (multi-touch)
 //
-// Visage's event system is mouse-oriented. We map a single primary touch to
-// left-button mouse events. Coordinates are in UIView space (top-left origin,
+// Each UITouch gets a stable pointer_id (0 for first touch, incrementing for
+// subsequent touches). Coordinates are in UIView space (top-left origin,
 // points) scaled by dpiScale() to native pixels — same coordinate system
 // Visage uses internally.
+//
+// pointer_id 0 = primary touch (drives keyboard focus, hover, drag-drop)
+// pointer_id > 0 = additional simultaneous touches
 // ---------------------------------------------------------------------------
 
 - (visage::Point)touchPosition:(UITouch*)touch {
@@ -107,42 +111,67 @@ namespace visage {
   return visage::Point(location.x * scale, location.y * scale);
 }
 
+- (int)assignPointerId:(UITouch*)touch {
+  NSNumber* existing = [self.active_touches objectForKey:touch];
+  if (existing)
+    return [existing intValue];
+
+  int pid = self.next_pointer_id++;
+  [self.active_touches setObject:@(pid) forKey:touch];
+  return pid;
+}
+
 - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  if (self.active_touch != nil)
-    return;
-
-  UITouch* touch = [touches anyObject];
-  self.active_touch = touch;
-
-  visage::Point point = [self touchPosition:touch];
-  self.visage_window->handleMouseDown(visage::kMouseButtonLeft, point.x, point.y,
-                                      visage::kMouseButtonLeft, 0);
+  for (UITouch* touch in touches) {
+    int pid = [self assignPointerId:touch];
+    visage::Point point = [self touchPosition:touch];
+    self.visage_window->handleMouseDown(visage::kMouseButtonLeft, point.x, point.y,
+                                        visage::kMouseButtonLeft, 0, pid);
+  }
 }
 
 - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  if (self.active_touch == nil || ![touches containsObject:self.active_touch])
-    return;
+  for (UITouch* touch in touches) {
+    NSNumber* pid_num = [self.active_touches objectForKey:touch];
+    if (!pid_num)
+      continue;
 
-  visage::Point point = [self touchPosition:self.active_touch];
-  self.visage_window->handleMouseMove(point.x, point.y, visage::kMouseButtonLeft, 0);
+    int pid = [pid_num intValue];
+    visage::Point point = [self touchPosition:touch];
+    self.visage_window->handleMouseMove(point.x, point.y, visage::kMouseButtonLeft, 0, pid);
+  }
 }
 
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  if (self.active_touch == nil || ![touches containsObject:self.active_touch])
-    return;
+  for (UITouch* touch in touches) {
+    NSNumber* pid_num = [self.active_touches objectForKey:touch];
+    if (!pid_num)
+      continue;
 
-  visage::Point point = [self touchPosition:self.active_touch];
-  self.visage_window->handleMouseUp(visage::kMouseButtonLeft, point.x, point.y, 0, 0);
-  self.active_touch = nil;
+    int pid = [pid_num intValue];
+    visage::Point point = [self touchPosition:touch];
+    self.visage_window->handleMouseUp(visage::kMouseButtonLeft, point.x, point.y, 0, 0, pid);
+    [self.active_touches removeObjectForKey:touch];
+  }
+
+  if ([self.active_touches count] == 0)
+    self.next_pointer_id = 0;
 }
 
 - (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  if (self.active_touch == nil)
-    return;
+  for (UITouch* touch in touches) {
+    NSNumber* pid_num = [self.active_touches objectForKey:touch];
+    if (!pid_num)
+      continue;
 
-  visage::Point point = [self touchPosition:self.active_touch];
-  self.visage_window->handleMouseUp(visage::kMouseButtonLeft, point.x, point.y, 0, 0);
-  self.active_touch = nil;
+    int pid = [pid_num intValue];
+    visage::Point point = [self touchPosition:touch];
+    self.visage_window->handleMouseUp(visage::kMouseButtonLeft, point.x, point.y, 0, 0, pid);
+    [self.active_touches removeObjectForKey:touch];
+  }
+
+  if ([self.active_touches count] == 0)
+    self.next_pointer_id = 0;
 }
 
 @end

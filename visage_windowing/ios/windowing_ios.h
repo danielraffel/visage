@@ -38,7 +38,8 @@ namespace visage {
 
 @interface VisageMetalView : MTKView
 @property(nonatomic) visage::WindowIos* visage_window;
-@property(nonatomic, strong) UITouch* active_touch;
+@property(nonatomic, strong) NSMapTable<UITouch*, NSNumber*>* active_touches;
+@property(nonatomic) int next_pointer_id;
 
 - (instancetype)initWithFrame:(CGRect)frame inWindow:(visage::WindowIos*)window;
 @end
