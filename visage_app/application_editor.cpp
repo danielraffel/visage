@@ -48,7 +48,7 @@ namespace visage {
   }
 
   void TopLevelFrame::addClientDecoration() {
-#if !VISAGE_MAC && !VISAGE_EMSCRIPTEN
+#if !VISAGE_MAC && !VISAGE_IOS && !VISAGE_EMSCRIPTEN
     client_decoration_ = std::make_unique<ClientWindowDecoration>();
     addChild(client_decoration_.get());
     client_decoration_->setOnTop(true);
