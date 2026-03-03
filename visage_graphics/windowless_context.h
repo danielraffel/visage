@@ -22,7 +22,7 @@
 #pragma once
 
 namespace visage {
-#if VISAGE_MAC
+#if VISAGE_MAC || VISAGE_IOS
   void* windowlessContext();
 #else
   static void* windowlessContext() {
