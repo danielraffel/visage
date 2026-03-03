@@ -1,4 +1,4 @@
-if (APPLE)
+if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
   list(APPEND PLATFORM_FILES macos/menu_bar.mm)
 endif ()
 
